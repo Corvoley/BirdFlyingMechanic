@@ -117,53 +117,21 @@ public class CharacterController : MonoBehaviour
         {
             if (currentFlyingForwardForce < maxAirVelocity)
             {
-                currentFlyingForwardForce += flyingForwardForce * Time.deltaTime;
-
-            }
-            if (currentFlyingUpwardForce <= maxAirVelocity && currentFlyingUpwardForce >= -maxAirVelocity)
-            {
-               
-                if (currentVertMult < 0)
-                {
-                    currentFlyingUpwardForce += flyingUpwardForce * Time.deltaTime * 10;
-                }
-                else if( currentVertMult > 0)
-                {
-                    currentFlyingUpwardForce -= flyingUpwardForce * Time.deltaTime * 10;
-                }
+                currentFlyingForwardForce += (flyingForwardForce - currentVertMult) * Time.deltaTime;
             }
 
         }
         else
         {
-            if (currentVertMult > 0)
+            if (currentFlyingForwardForce > 0 && currentFlyingForwardForce <= maxDescendVelocity)
             {
-                if (currentFlyingForwardForce < maxDescendVelocity)
-                {
-                    currentFlyingForwardForce += currentVertMult * Time.deltaTime * 10;
-
-                }
-                if (currentFlyingUpwardForce > -maxDescendVelocity)
-                {
-                    currentFlyingUpwardForce -= currentVertMult * Time.deltaTime * 10;
-                }
+                currentFlyingForwardForce -= (airHorizontalSlow + currentVertMult) * Time.deltaTime;
 
             }
-            else if (currentVertMult < 0)
+            else
             {
-                if (currentFlyingForwardForce < 1)
-                {
-                    currentFlyingForwardForce -= -currentVertMult * Time.deltaTime * 10;
-
-                }
-                if (currentFlyingForwardForce > 1 && currentFlyingUpwardForce <= maxAirVelocity)
-                {
-                    currentFlyingUpwardForce -= -currentVertMult * Time.deltaTime * 10;
-                }
-
+                currentFlyingForwardForce -= airHorizontalSlow * Time.deltaTime;
             }
-
-
 
         }
 
@@ -174,7 +142,7 @@ public class CharacterController : MonoBehaviour
         if (isFlying && inputController.IsFlyingForwardHeld())
         {
             moveDirection = mainCamera.forward;
-            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentFlyingUpwardForce, transform.forward.z * currentFlyingForwardForce);
+            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentVertMult, transform.forward.z * currentFlyingForwardForce);
 
             //criar uma velocidade constante enquanto boa que aumenta ou diminue de acordo com o angulo em relacao ao chao 
 
@@ -184,7 +152,7 @@ public class CharacterController : MonoBehaviour
         else if (isFlying)
         {
             moveDirection = mainCamera.forward;
-            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentFlyingUpwardForce, transform.forward.z * currentFlyingForwardForce);
+            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentVertMult, transform.forward.z * currentFlyingForwardForce);
             rb.velocity = flyingForce;
 
         }
@@ -199,7 +167,15 @@ public class CharacterController : MonoBehaviour
             a -= 360;
         }
         var percent = Mathf.InverseLerp(-50f, 60f, a);
-        currentVertMult = Mathf.Lerp(-airVerticalVelocityMult, airVerticalVelocityMult, percent);
+        if (currentFlyingForwardForce > 5)
+        {
+            currentVertMult = Mathf.Lerp(currentFlyingForwardForce, -currentFlyingForwardForce, percent);
+
+        }
+        else
+        {
+            currentVertMult = Mathf.Lerp(-10,   0, Time.deltaTime);
+        }
         Debug.Log(currentVertMult);
     }
     private void SpeedControl()
