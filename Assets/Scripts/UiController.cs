@@ -7,6 +7,8 @@ public class UiController : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI velocity;
     [SerializeField] private TextMeshProUGUI flying;
+    [SerializeField] private TextMeshProUGUI flyingUpForce;
+    [SerializeField] private TextMeshProUGUI flyingForwardForce;
     [SerializeField] private CharacterController character;
     void Start()
     {
@@ -17,6 +19,8 @@ public class UiController : MonoBehaviour
     void Update()
     {
         velocity.text = $"Velocity: {(int)character.Velocity}";
-        flying.text = $"Flying:{(character.IsFlying ? true : false)}"; 
+        flying.text = $"Flying:{(character.IsFlying ? true : false)}";
+        flyingUpForce.text = $"FlyingUpForce:{(int)character.CurrentFlyingUpwardForce}";
+        flyingForwardForce.text = $"FlyingForwardForce:{(int)character.CurrentFlyingForwardForce}";
     }
 }
