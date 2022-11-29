@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(InputController))]
+[RequireComponent(typeof(PlayerInputController))]
 public class CharacterController : MonoBehaviour
 {
     #region Character Parameters
@@ -32,7 +32,7 @@ public class CharacterController : MonoBehaviour
 
     #region References
     private Rigidbody rb;
-    private InputController inputController;
+    private PlayerInputController inputController;
     [SerializeField] private Transform mainCamera;
     [SerializeField] private LayerMask groundLayer;
 
@@ -47,15 +47,13 @@ public class CharacterController : MonoBehaviour
     private bool canJump;
     private bool isFlying;
     private float currentFlyingForwardForce;
-    private float currentFlyingUpwardForce;
-    private float currenAirSlowMult;
     private float currentVertMult;
 
 
     public float Velocity => rb.velocity.magnitude;
     public bool IsFlying => isFlying;
     public float CurrentFlyingForwardForce => currentFlyingForwardForce;
-    public float CurrentFlyingUpwardForce => currentFlyingUpwardForce;
+    public float CurrentFlyingUpwardForce => currentVertMult;
 
 
 
@@ -63,12 +61,7 @@ public class CharacterController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
-        inputController = GetComponent<InputController>();
-    }
-
-    private void Start()
-    {
-        currenAirSlowMult = airVerticalSlowMult;
+        inputController = GetComponent<PlayerInputController>();
     }
 
     void Update()
@@ -77,7 +70,6 @@ public class CharacterController : MonoBehaviour
         SpeedControl();
         RotationCheck();
         FlyingMultiplierCheck();
-
 
     }
     private void FixedUpdate()
@@ -111,22 +103,19 @@ public class CharacterController : MonoBehaviour
         {
             isFlying = false;
             currentFlyingForwardForce = 0f;
-            currentFlyingUpwardForce = 0f;
         }
         if (inputController.IsFlyingForwardHeld())
         {
             if (currentFlyingForwardForce < maxAirVelocity)
             {
-                currentFlyingForwardForce += (flyingForwardForce - currentVertMult) * Time.deltaTime;
+                currentFlyingForwardForce += (flyingForwardForce - (currentVertMult * 2)) * Time.deltaTime;
             }
-
         }
         else
         {
             if (currentFlyingForwardForce > 0 && currentFlyingForwardForce <= maxDescendVelocity)
             {
                 currentFlyingForwardForce -= (airHorizontalSlow + currentVertMult) * Time.deltaTime;
-
             }
             else
             {
@@ -144,8 +133,6 @@ public class CharacterController : MonoBehaviour
             moveDirection = mainCamera.forward;
             Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentVertMult, transform.forward.z * currentFlyingForwardForce);
 
-            //criar uma velocidade constante enquanto boa que aumenta ou diminue de acordo com o angulo em relacao ao chao 
-
             rb.velocity = flyingForce;
 
         }
@@ -154,9 +141,7 @@ public class CharacterController : MonoBehaviour
             moveDirection = mainCamera.forward;
             Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentVertMult, transform.forward.z * currentFlyingForwardForce);
             rb.velocity = flyingForce;
-
         }
-
 
     }
     private void FlyingMultiplierCheck()
@@ -170,13 +155,12 @@ public class CharacterController : MonoBehaviour
         if (currentFlyingForwardForce > 5)
         {
             currentVertMult = Mathf.Lerp(currentFlyingForwardForce, -currentFlyingForwardForce, percent);
-
         }
         else
         {
-            currentVertMult = Mathf.Lerp(-10,   0, Time.deltaTime);
+            currentVertMult = Mathf.Lerp(-10, 0, Time.deltaTime);
         }
-        Debug.Log(currentVertMult);
+        
     }
     private void SpeedControl()
     {
@@ -205,17 +189,12 @@ public class CharacterController : MonoBehaviour
                 rb.velocity += moveDirection.normalized * acceleration * Time.deltaTime;
             }
 
-
-            // rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
-
         }
     }
     private void RotationCheck()
     {
         if (moveDirection != Vector3.zero)
         {
-            // var toRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
-            //transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, rotationSpeed * Time.deltaTime);
             transform.forward = Vector3.Slerp(transform.forward, moveDirection.normalized, Time.deltaTime * rotationSpeed);
         }
     }

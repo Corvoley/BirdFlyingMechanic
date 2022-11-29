@@ -6,8 +6,8 @@ using Cinemachine;
 public class CameraController : MonoBehaviour
 {
     [SerializeField] private Transform mainCamera;    
-    [SerializeField] private Transform player;    
-    [SerializeField] private InputController inputController;
+    [SerializeField] private Transform playerTransform;    
+    [SerializeField] private PlayerInputController playerInputController;
 
     [SerializeField] private float rotationSpeed;
     [SerializeField] private float combatRotationSpeed;
@@ -15,16 +15,6 @@ public class CameraController : MonoBehaviour
 
     [SerializeField] private CinemachineFreeLook freeLookCamera;
     [SerializeField] private CinemachineVirtualCamera combatCamera;
-
-    Vector3 viewDir;
-    Vector3 combatViewDir;
-    Vector3 inputDir;
-    private CameraStyle currentCameraStyle;
-    private enum CameraStyle
-    {
-        Basic,
-        Combat,
-    }
 
     private void Awake()
     {
@@ -36,14 +26,12 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
-        if (inputController.IsAimingButtonHeld())
-        {
-            currentCameraStyle = CameraStyle.Combat;
+        if (playerInputController.IsAimingButtonHeld())
+        {         
             freeLookCamera.enabled = false;
         }
         else
-        {
-            currentCameraStyle = CameraStyle.Basic;
+        {           
             freeLookCamera.enabled = true;
         }
 

@@ -10,17 +10,12 @@ public class UiController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI flyingUpForce;
     [SerializeField] private TextMeshProUGUI flyingForwardForce;
     [SerializeField] private CharacterController character;
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
+     
     void Update()
     {
         velocity.text = $"Velocity: {(int)character.Velocity}";
         flying.text = $"Flying:{(character.IsFlying ? true : false)}";
-        flyingUpForce.text = $"FlyingUpForce:{(int)character.CurrentFlyingUpwardForce}";
+        flyingUpForce.text = $"VerticalMultplierForce:{(int)character.CurrentFlyingUpwardForce}";
         flyingForwardForce.text = $"FlyingForwardForce:{(int)character.CurrentFlyingForwardForce}";
     }
 }
