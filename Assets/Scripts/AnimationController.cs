@@ -6,13 +6,13 @@ public class AnimationController : MonoBehaviour
 {
 
     private Animator animator;
-    private CharacterController characterController;
+    private PlayerController characterController;
 
 
     private void Awake()
     {
         animator = GetComponent<Animator>();
-        characterController = GetComponent<CharacterController>();
+        characterController = GetComponent<PlayerController>();
     }
 
 

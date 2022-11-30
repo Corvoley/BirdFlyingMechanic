@@ -2,19 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Cinemachine;
-
 public class CameraController : MonoBehaviour
-{
-    [SerializeField] private Transform mainCamera;    
-    [SerializeField] private Transform playerTransform;    
-    [SerializeField] private PlayerInputController playerInputController;
+{      
+    [SerializeField] private PlayerController playerControllerController;
 
-    [SerializeField] private float rotationSpeed;
-    [SerializeField] private float combatRotationSpeed;
+    [SerializeField] private float groundRotationSpeed;
+    [SerializeField] private float flyingRotationSpeed;
 
 
     [SerializeField] private CinemachineFreeLook freeLookCamera;
-    [SerializeField] private CinemachineVirtualCamera combatCamera;
+    
 
     private void Awake()
     {
@@ -26,13 +23,13 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
-        if (playerInputController.IsAimingButtonHeld())
-        {         
-            freeLookCamera.enabled = false;
+        if (playerControllerController.IsFlying)
+        {
+            freeLookCamera.m_XAxis.m_MaxSpeed = flyingRotationSpeed;
         }
         else
-        {           
-            freeLookCamera.enabled = true;
+        {
+            freeLookCamera.m_XAxis.m_MaxSpeed = groundRotationSpeed;
         }
 
         

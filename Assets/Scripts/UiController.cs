@@ -9,7 +9,7 @@ public class UiController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI flying;
     [SerializeField] private TextMeshProUGUI flyingUpForce;
     [SerializeField] private TextMeshProUGUI flyingForwardForce;
-    [SerializeField] private CharacterController character;
+    [SerializeField] private PlayerController character;
      
     void Update()
     {

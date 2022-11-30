@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerInputController))]
-public class CharacterController : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
     #region Character Parameters
     [SerializeField] private float acceleration;
@@ -11,8 +11,7 @@ public class CharacterController : MonoBehaviour
     [SerializeField] private float maxAirVelocity;
     [SerializeField] private float maxDescendVelocity;
     [SerializeField] private float airHorizontalSlow;
-    [SerializeField] private float airVerticalSlow;
-    [SerializeField] private float airVerticalSlowMult;
+    [SerializeField] private float airVerticalSlow;    
     [SerializeField] private float airHorizontalVelocityMult;
     [SerializeField] private float airVerticalVelocityMult;
     [SerializeField] private float gravityForce;
@@ -24,8 +23,8 @@ public class CharacterController : MonoBehaviour
 
 
 
-    [SerializeField] private float flyingForwardForce;
-    [SerializeField] private float flyingUpwardForce;
+    [SerializeField] private float flyingForwardAccelerationForce;
+    [SerializeField] private float flyingGravityAccelerationForce;
     [SerializeField] private float flyingUpwardMultiplier;
     [SerializeField] private float rotationSpeed;
     #endregion
@@ -46,14 +45,18 @@ public class CharacterController : MonoBehaviour
     private Vector3 moveDirection;
     private bool canJump;
     private bool isFlying;
+    private bool isInCombatMode;
+    private bool isAccelerating;
     private float currentFlyingForwardForce;
+    private float currentFlyingGravityForce;
     private float currentVertMult;
-
+    private float currentHorizontalMult;
 
     public float Velocity => rb.velocity.magnitude;
     public bool IsFlying => isFlying;
+    public bool IsInCombatMode => isInCombatMode;
     public float CurrentFlyingForwardForce => currentFlyingForwardForce;
-    public float CurrentFlyingUpwardForce => currentVertMult;
+    public float CurrentFlyingUpwardForce => currentFlyingGravityForce;
 
 
 
@@ -69,8 +72,8 @@ public class CharacterController : MonoBehaviour
         InputCheck();
         SpeedControl();
         RotationCheck();
-        FlyingMultiplierCheck();
-
+        FlyingMultiplierByCameraXAngleCheck();
+        FlyingAccelerationCheck();
     }
     private void FixedUpdate()
     {
@@ -104,26 +107,50 @@ public class CharacterController : MonoBehaviour
             isFlying = false;
             currentFlyingForwardForce = 0f;
         }
+
         if (inputController.IsFlyingForwardHeld())
+        {
+            isAccelerating = true;
+        }
+        else
+        {
+            isAccelerating = false;
+        }
+    }
+    private void FlyingAccelerationCheck()
+    {
+        
+        if (isAccelerating)
         {
             if (currentFlyingForwardForce < maxAirVelocity)
             {
-                currentFlyingForwardForce += (flyingForwardForce - (currentVertMult * 2)) * Time.deltaTime;
+                currentFlyingForwardForce += (flyingForwardAccelerationForce - currentHorizontalMult) * Time.deltaTime;
+                
+            }
+            if (currentFlyingGravityForce < 10f)
+            {
+
+                currentFlyingGravityForce += (flyingGravityAccelerationForce + currentVertMult * 2) * Time.deltaTime;
             }
         }
         else
         {
             if (currentFlyingForwardForce > 0 && currentFlyingForwardForce <= maxDescendVelocity)
             {
-                currentFlyingForwardForce -= (airHorizontalSlow + currentVertMult) * Time.deltaTime;
+                currentFlyingForwardForce -= (airHorizontalSlow + currentHorizontalMult) * Time.deltaTime;
             }
-            else
+            else if (currentFlyingForwardForce > 0)
             {
                 currentFlyingForwardForce -= airHorizontalSlow * Time.deltaTime;
             }
-
+            if (currentFlyingGravityForce > -maxDescendVelocity)
+            {
+                currentFlyingGravityForce = (AirVerticalSlowValueByForwardSpeed(airVerticalSlow) + currentVertMult );
+                Debug.Log(AirVerticalSlowValueByForwardSpeed(airVerticalSlow));
+            }
         }
 
+        
     }
 
     private void FlyingCheck()
@@ -131,7 +158,7 @@ public class CharacterController : MonoBehaviour
         if (isFlying && inputController.IsFlyingForwardHeld())
         {
             moveDirection = mainCamera.forward;
-            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentVertMult, transform.forward.z * currentFlyingForwardForce);
+            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentFlyingGravityForce, transform.forward.z * currentFlyingForwardForce);
 
             rb.velocity = flyingForce;
 
@@ -139,12 +166,18 @@ public class CharacterController : MonoBehaviour
         else if (isFlying)
         {
             moveDirection = mainCamera.forward;
-            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentVertMult, transform.forward.z * currentFlyingForwardForce);
+            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentFlyingGravityForce, transform.forward.z * currentFlyingForwardForce);
             rb.velocity = flyingForce;
         }
 
     }
-    private void FlyingMultiplierCheck()
+
+    private float AirVerticalSlowValueByForwardSpeed(float airVerticalSlow)
+    {
+        var percent = Mathf.InverseLerp(0, maxDescendVelocity, currentFlyingForwardForce);
+        return Mathf.Lerp(-airVerticalSlow, 0, percent);
+    }
+    private void FlyingMultiplierByCameraXAngleCheck()
     {
         var a = mainCamera.rotation.eulerAngles.x;
         if (a > 180)
@@ -152,15 +185,10 @@ public class CharacterController : MonoBehaviour
             a -= 360;
         }
         var percent = Mathf.InverseLerp(-50f, 60f, a);
-        if (currentFlyingForwardForce > 5)
-        {
-            currentVertMult = Mathf.Lerp(currentFlyingForwardForce, -currentFlyingForwardForce, percent);
-        }
-        else
-        {
-            currentVertMult = Mathf.Lerp(-10, 0, Time.deltaTime);
-        }
-        
+       
+        currentVertMult = Mathf.Lerp(airVerticalVelocityMult, -airVerticalVelocityMult, percent);
+        currentHorizontalMult = Mathf.Lerp(airHorizontalVelocityMult, -airHorizontalVelocityMult, percent);
+                
     }
     private void SpeedControl()
     {
