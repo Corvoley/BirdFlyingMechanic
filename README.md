@@ -1,7 +1,7 @@
 # BirdFlyingMechanic
 CONTROLS
 
-Walk - W/A/S/D 
+Walk - W/A/S/D
 Jump - Space
 Fly - Space while on air
 Fly Direction - Mouse
