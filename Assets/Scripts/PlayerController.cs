@@ -6,30 +6,38 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     #region Character Parameters
+    [Header("Movement")]
     [SerializeField] private float acceleration;
     [SerializeField] private float maxGroundVelocity;
     [SerializeField] private float maxAirVelocity;
-    [SerializeField] private float maxDescendVelocity;
-    [SerializeField] private float airHorizontalSlow;
-    [SerializeField] private float airVerticalSlow;    
-    [SerializeField] private float airHorizontalVelocityMult;
-    [SerializeField] private float airVerticalVelocityMult;
-    [SerializeField] private float gravityForce;
-
-
     [SerializeField] private float groundDrag;
     [SerializeField] private float jumpForce;
     [SerializeField] private float playerHeight;
-
-
-
-    [SerializeField] private float flyingForwardAccelerationForce;
-    [SerializeField] private float flyingGravityAccelerationForce;
-    [SerializeField] private float flyingUpwardMultiplier;
     [SerializeField] private float rotationSpeed;
+    private Vector3 moveDirection;
+    private bool canJump;
+
+
+    [Header("Flying")]
+    [SerializeField] private float throttleIncrement;
+    [SerializeField] private float throttleMax;
+    [SerializeField] private float maxThrust;
+    [SerializeField] private float responsiveness;
+    private bool isFlying;
+    private float throttle;
+    private float roll;
+    private float pitch;
+    private float yaw;
+    private float responseModifier => (rb.mass / 10f) * responsiveness;
+
+    [Header("Combat")]
+    private bool isInCombatMode;
+
+
     #endregion
 
     #region References
+    [Header("References")]
     private Rigidbody rb;
     private PlayerInputController inputController;
     [SerializeField] private Transform mainCamera;
@@ -42,28 +50,16 @@ public class PlayerController : MonoBehaviour
     private bool jumpInput;
     #endregion
 
-    private Vector3 moveDirection;
-    private bool canJump;
-    private bool isFlying;
-    private bool isInCombatMode;
-    private bool isAccelerating;
-    private float currentFlyingForwardForce;
-    private float currentFlyingGravityForce;
-    private float currentVertMult;
-    private float currentHorizontalMult;
 
     public float Velocity => rb.velocity.magnitude;
     public bool IsFlying => isFlying;
     public bool IsInCombatMode => isInCombatMode;
-    public float CurrentFlyingForwardForce => currentFlyingForwardForce;
-    public float CurrentFlyingUpwardForce => currentFlyingGravityForce;
 
 
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true;
         inputController = GetComponent<PlayerInputController>();
     }
 
@@ -72,18 +68,13 @@ public class PlayerController : MonoBehaviour
         InputCheck();
         SpeedControl();
         RotationCheck();
-        FlyingMultiplierByCameraXAngleCheck();
-        FlyingAccelerationCheck();
     }
     private void FixedUpdate()
     {
         MoveCheck();
         JumpCheck();
         FlyingCheck();
-        if (!isFlying)
-        {
-            GravityCheck();
-        }
+
     }
 
     private void InputCheck()
@@ -91,6 +82,23 @@ public class PlayerController : MonoBehaviour
         horizontalInput = inputController.GetHorizontalRawInput();
         verticalInput = inputController.GetVerticallRawInput();
         jumpInput = inputController.IsButtonPressed();
+        roll = Input.GetAxis("Roll");
+        pitch = -Input.GetAxis("Mouse Y");
+        yaw = Input.GetAxis("Mouse X");
+
+        if (inputController.IsFlyingForwardHeld() && isFlying)
+        {
+            throttle += throttleIncrement;
+        }
+        else if(inputController.IsFlyingBrakeHeld() && isFlying)
+        {
+            throttle -= throttleIncrement;
+        }
+        else
+        {
+            throttle -= throttleIncrement / 10;
+        }
+        throttle = Mathf.Clamp(throttle, 0, throttleMax);
 
         if (jumpInput && IsGrounded())
         {
@@ -105,91 +113,24 @@ public class PlayerController : MonoBehaviour
         else if (IsGrounded())
         {
             isFlying = false;
-            currentFlyingForwardForce = 0f;
+
         }
 
-        if (inputController.IsFlyingForwardHeld())
-        {
-            isAccelerating = true;
-        }
-        else
-        {
-            isAccelerating = false;
-        }
-    }
-    private void FlyingAccelerationCheck()
-    {
-        
-        if (isAccelerating)
-        {
-            if (currentFlyingForwardForce < maxAirVelocity)
-            {
-                currentFlyingForwardForce += (flyingForwardAccelerationForce - currentHorizontalMult) * Time.deltaTime;
-                
-            }
-            if (currentFlyingGravityForce < 10f)
-            {
-
-                currentFlyingGravityForce += (flyingGravityAccelerationForce + currentVertMult * 2) * Time.deltaTime;
-            }
-        }
-        else
-        {
-            if (currentFlyingForwardForce > 0 && currentFlyingForwardForce <= maxDescendVelocity)
-            {
-                currentFlyingForwardForce -= (airHorizontalSlow + currentHorizontalMult) * Time.deltaTime;
-            }
-            else if (currentFlyingForwardForce > 0)
-            {
-                currentFlyingForwardForce -= airHorizontalSlow * Time.deltaTime;
-            }
-            if (currentFlyingGravityForce > -maxDescendVelocity)
-            {
-                currentFlyingGravityForce = (AirVerticalSlowValueByForwardSpeed(airVerticalSlow) + currentVertMult );
-                Debug.Log(AirVerticalSlowValueByForwardSpeed(airVerticalSlow));
-            }
-        }
-
-        
     }
 
     private void FlyingCheck()
     {
-        if (isFlying && inputController.IsFlyingForwardHeld())
+        if (isFlying)
         {
-            moveDirection = mainCamera.forward;
-            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentFlyingGravityForce, transform.forward.z * currentFlyingForwardForce);
-
-            rb.velocity = flyingForce;
+            rb.AddForce(transform.forward * maxThrust * throttle);
+            rb.AddTorque(transform.up * yaw * responseModifier);
+            rb.AddTorque(transform.right * pitch * responseModifier);
+            rb.AddTorque(-transform.forward * roll * responseModifier);
 
         }
-        else if (isFlying)
-        {
-            moveDirection = mainCamera.forward;
-            Vector3 flyingForce = new Vector3(transform.forward.x * currentFlyingForwardForce, currentFlyingGravityForce, transform.forward.z * currentFlyingForwardForce);
-            rb.velocity = flyingForce;
-        }
-
     }
 
-    private float AirVerticalSlowValueByForwardSpeed(float airVerticalSlow)
-    {
-        var percent = Mathf.InverseLerp(0, maxDescendVelocity, currentFlyingForwardForce);
-        return Mathf.Lerp(-airVerticalSlow, 0, percent);
-    }
-    private void FlyingMultiplierByCameraXAngleCheck()
-    {
-        var a = mainCamera.rotation.eulerAngles.x;
-        if (a > 180)
-        {
-            a -= 360;
-        }
-        var percent = Mathf.InverseLerp(-50f, 60f, a);
-       
-        currentVertMult = Mathf.Lerp(airVerticalVelocityMult, -airVerticalVelocityMult, percent);
-        currentHorizontalMult = Mathf.Lerp(airHorizontalVelocityMult, -airHorizontalVelocityMult, percent);
-                
-    }
+
     private void SpeedControl()
     {
         if (IsGrounded())
@@ -198,7 +139,7 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            rb.drag = 0;
+            rb.drag = 1;
         }
     }
     private bool IsGrounded()
@@ -214,14 +155,15 @@ public class PlayerController : MonoBehaviour
 
             if (rb.velocity.magnitude <= maxGroundVelocity)
             {
-                rb.velocity += moveDirection.normalized * acceleration * Time.deltaTime;
+                //rb.velocity += moveDirection.normalized * acceleration * Time.deltaTime;
+                rb.AddForce(moveDirection.normalized * acceleration, ForceMode.Force);
             }
 
         }
     }
     private void RotationCheck()
     {
-        if (moveDirection != Vector3.zero)
+        if (moveDirection != Vector3.zero && !isFlying)
         {
             transform.forward = Vector3.Slerp(transform.forward, moveDirection.normalized, Time.deltaTime * rotationSpeed);
         }
@@ -234,12 +176,6 @@ public class PlayerController : MonoBehaviour
             rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
             canJump = false;
         }
-    }
-
-    private void GravityCheck()
-    {
-        float gravity = -gravityForce * Time.deltaTime;
-        rb.velocity += new Vector3(0, gravity, 0);
     }
 
 }

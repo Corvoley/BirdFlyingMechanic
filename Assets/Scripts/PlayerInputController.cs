@@ -12,6 +12,10 @@ public class PlayerInputController : MonoBehaviour
     {
         return Input.GetKey(KeyCode.W);
     }
+    public bool IsFlyingBrakeHeld()
+    {
+        return Input.GetKey(KeyCode.S);
+    }
 
     public float GetHorizontalRawInput()
     {

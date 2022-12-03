@@ -14,8 +14,6 @@ public class UiController : MonoBehaviour
     void Update()
     {
         velocity.text = $"Velocity: {(int)character.Velocity}";
-        flying.text = $"Flying:{(character.IsFlying ? true : false)}";
-        flyingUpForce.text = $"VerticalMultplierForce:{(int)character.CurrentFlyingUpwardForce}";
-        flyingForwardForce.text = $"FlyingForwardForce:{(int)character.CurrentFlyingForwardForce}";
+        flying.text = $"Flying:{(character.IsFlying ? true : false)}";        
     }
 }

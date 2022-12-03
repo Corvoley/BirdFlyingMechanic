@@ -11,6 +11,7 @@ public class CameraController : MonoBehaviour
 
 
     [SerializeField] private CinemachineFreeLook freeLookCamera;
+    [SerializeField] private CinemachineVirtualCamera flyingCamera;
     
 
     private void Awake()
@@ -26,10 +27,14 @@ public class CameraController : MonoBehaviour
         if (playerControllerController.IsFlying)
         {
             freeLookCamera.m_XAxis.m_MaxSpeed = flyingRotationSpeed;
+            freeLookCamera.enabled = false;
+            flyingCamera.enabled = true;
         }
         else
         {
             freeLookCamera.m_XAxis.m_MaxSpeed = groundRotationSpeed;
+            freeLookCamera.enabled = true;
+            flyingCamera.enabled = false;
         }
 
         
