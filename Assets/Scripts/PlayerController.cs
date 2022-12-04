@@ -122,10 +122,10 @@ public class PlayerController : MonoBehaviour
     {
         if (isFlying)
         {
-            rb.AddForce(transform.forward * maxThrust * throttle);
-            rb.AddTorque(transform.up * yaw * responseModifier);
-            rb.AddTorque(transform.right * pitch * responseModifier);
-            rb.AddTorque(-transform.forward * roll * responseModifier);
+            rb.AddForce((transform.forward * maxThrust * throttle * Time.deltaTime) * 50);
+            rb.AddTorque((transform.up * yaw * responseModifier * Time.deltaTime) * 30);
+            rb.AddTorque((transform.right * pitch * responseModifier * Time.deltaTime) * 30);
+            rb.AddTorque((-transform.forward * roll * responseModifier * Time.deltaTime) * 50);
 
         }
     }
