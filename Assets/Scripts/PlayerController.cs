@@ -28,6 +28,8 @@ public class PlayerController : MonoBehaviour
     private float roll;
     private float pitch;
     private float yaw;
+    private float slide;
+    private float upThrottle;
     private float responseModifier => (rb.mass / 10f) * responsiveness;
 
     [Header("Combat")]
@@ -81,10 +83,15 @@ public class PlayerController : MonoBehaviour
     {
         horizontalInput = inputController.GetHorizontalRawInput();
         verticalInput = inputController.GetVerticallRawInput();
-        jumpInput = inputController.IsButtonPressed();
+        jumpInput = inputController.IsJumpButtonPressed();
         roll = Input.GetAxis("Roll");
         pitch = -Input.GetAxis("Mouse Y");
         yaw = Input.GetAxis("Mouse X");
+        slide = Input.GetAxis("Yaw");
+       
+
+
+
 
         if (inputController.IsFlyingForwardHeld() && isFlying)
         {
@@ -100,6 +107,18 @@ public class PlayerController : MonoBehaviour
         }
         throttle = Mathf.Clamp(throttle, 0, throttleMax);
 
+        if (inputController.IsJumpButtonHeld() && isFlying)
+        {
+            upThrottle += throttleIncrement * 10;
+        }
+        else
+        {
+            upThrottle -= throttleIncrement * 10;
+        }
+        upThrottle = Mathf.Clamp(upThrottle, 0, throttleMax);
+
+
+
         if (jumpInput && IsGrounded())
         {
             canJump = true;
@@ -113,7 +132,7 @@ public class PlayerController : MonoBehaviour
         else if (IsGrounded())
         {
             isFlying = false;
-
+            throttle = 0;
         }
 
     }
@@ -126,6 +145,9 @@ public class PlayerController : MonoBehaviour
             rb.AddTorque((transform.up * yaw * responseModifier * Time.deltaTime) * 30);
             rb.AddTorque((transform.right * pitch * responseModifier * Time.deltaTime) * 30);
             rb.AddTorque((-transform.forward * roll * responseModifier * Time.deltaTime) * 50);
+
+            rb.AddForce((transform.right * slide * 5000 )* Time.deltaTime);
+            rb.AddForce((transform.up * upThrottle * maxThrust * Time.deltaTime) * 20);
 
         }
     }

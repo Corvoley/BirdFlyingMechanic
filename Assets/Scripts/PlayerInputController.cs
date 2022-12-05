@@ -34,9 +34,13 @@ public class PlayerInputController : MonoBehaviour
         return Input.GetAxis("Vertical");
     }
 
-    public bool IsButtonPressed()
+    public bool IsJumpButtonPressed()
     {
         return Input.GetKeyDown(KeyCode.Space);
+    }
+    public bool IsJumpButtonHeld()
+    {
+        return Input.GetKey(KeyCode.Space);
     }
 
 }
